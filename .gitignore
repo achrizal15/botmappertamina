@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Chrome & Playwright Browser Profile (Session & Cookies)
+user_profile_pertamina/
+
+# Node / Bun
+node_modules/
+bun.lockb
+
+# Excel lock files & backups
+~$*.xlsx
+*_backup.xlsx
+
+# Logs
+*.log

@@ -1,0 +1,8 @@
+{
+  "phone": "085234104446",
+  "pin": "344311",
+  "excel_file": "template_nik.xlsx",
+  "headless": false,
+  "delay_min": 2.0,
+  "delay_max": 3.5
+}
