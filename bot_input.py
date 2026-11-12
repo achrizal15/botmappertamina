@@ -59,8 +59,8 @@ DEFAULT_CONFIG = {
     "pin": "344311",
     "excel_file": "template_nik.xlsx",
     "headless": False,
-    "delay_min": 2.5,
-    "delay_max": 4.0
+    "delay_min": 4.0,
+    "delay_max": 6.0
 }
 
 def load_config():
@@ -507,10 +507,11 @@ async def process_single_nik(page, nik, cfg, captured_api_name):
     # 1. Buka modal Catat Penjualan
     nik_input = await open_catat_penjualan_modal(page)
 
-    # 2. Masukkan NIK
-    await nik_input.fill(nik)
-    await asyncio.sleep(0.5)
-
+    # 2. Masukkan NIK dengan pengetikan alami (human-like)
+    await nik_input.click()
+    await nik_input.fill("")
+    await nik_input.press_sequentially(nik, delay=random.randint(30, 55))
+    await asyncio.sleep(random.uniform(0.5, 0.8))
     # 3. Klik "LANJUTKAN PENJUALAN"
     lanjut_btn = page.locator('button:has-text("LANJUTKAN PENJUALAN")').first
     await lanjut_btn.click()
@@ -711,10 +712,17 @@ async def process_single_nik(page, nik, cfg, captured_api_name):
                 keterangan = first_line[:40]
                 print(f"[-] HASIL: {status_result} ({keterangan})")
 
-            tutup_btn = page.locator('button:has-text("TUTUP")').first
-            if await tutup_btn.is_visible():
-                await tutup_btn.click()
-                await asyncio.sleep(0.5)
+            await page.evaluate('''() => {
+                const dialog = document.querySelector('[role="dialog"]');
+                if (dialog) {
+                    const btn = Array.from(dialog.querySelectorAll('button')).find(b => b.textContent?.includes('TUTUP'));
+                    if (btn) btn.click();
+                }
+            }''')
+            await asyncio.sleep(0.5)
+            if "Terlalu banyak melakukan permintaan" in d_text or "Tidak Dapat Melanjutkan" in d_text:
+                print("[!] Menunggu jeda pendinginan (cooldown) 6 detik...")
+                await asyncio.sleep(6.0)
             break
 
         alert_error = page.locator('.mantine-Alert-root, [role="alert"]').first
@@ -839,8 +847,19 @@ async def main():
     cfg = load_config()
     excel_path = Path(cfg["excel_file"])
     if not excel_path.exists():
-        print(f"[-] File Excel '{excel_path}' tidak ditemukan!")
-        sys.exit(1)
+        print(f"[!] File Excel '{excel_path}' belum ada. Membuat template baru otomatis...")
+        wb_new = openpyxl.Workbook()
+        ws_new = wb_new.active
+        headers = ["NIK", "STATUS", "KETERANGAN", "NAMA PELANGGAN", "TERAKHIR DIGUNAKAN"]
+        for idx_h, h in enumerate(headers, 1):
+            cell = ws_new.cell(row=1, column=idx_h, value=h)
+            cell.font = openpyxl.styles.Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+            cell.fill = openpyxl.styles.PatternFill(start_color="2E7D32", end_color="2E7D32", fill_type="solid")
+            cell.alignment = openpyxl.styles.Alignment(horizontal="center", vertical="center")
+        wb_new.save(excel_path)
+        print(f"[+] File '{excel_path}' berhasil dibuat dengan format header yang benar!")
+        print(f"[!] Silakan masukkan daftar NIK ke Kolom A pada file '{excel_path}', lalu jalankan kembali bot.")
+        sys.exit(0)
 
     print(f"[*] Membaca file: {excel_path}")
     

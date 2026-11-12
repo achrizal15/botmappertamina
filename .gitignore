@@ -11,7 +11,9 @@ user_profile_pertamina/
 node_modules/
 bun.lockb
 
-# Excel lock files & backups
+# Excel Data Files (Diabaikan agar data pribadi/konsumen tidak ter-push ke GitHub)
+*.xlsx
+template_nik.xlsx
 ~$*.xlsx
 *_backup.xlsx
 
